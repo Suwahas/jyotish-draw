@@ -7,6 +7,7 @@
 namespace Jyotish\Draw\Plot\Chakra\Style;
 
 use Jyotish\Base\Analysis;
+use Jyotish\Ganita\Matrix;
 
 /**
  * Class for generate Chakra.
@@ -16,6 +17,15 @@ use Jyotish\Base\Analysis;
 abstract class AbstractChakra
 {
     use \Jyotish\Base\Traits\DataTrait;
+    
+    /**
+     * Triangle bhava
+     */
+    const BHAVA_TRIANGLE = 'triangle';
+    /**
+     * Rectangle bhava
+     */
+    const BHAVA_RECTANGLE = 'rectangle';
     
     /**
      * North Indian style
@@ -29,6 +39,11 @@ abstract class AbstractChakra
      * Eastern Indian Style
      */
     const STYLE_EAST = 'east';
+    
+    const COUNT_ONE = 'one';
+    const COUNT_FOUR = 'four';
+    const COUNT_FIVE = 'five';
+    const COUNT_MORE = 'more';
 
     /**
      * List of styles.
@@ -63,12 +78,33 @@ abstract class AbstractChakra
     protected $chakraDivider;
     
     /**
-     * Coordinates of chakra bhavas.
+     * Base coordinates of bhavas.
+     * 
+     * @var array
+     */
+    protected $bhavaPointsBase = [];
+    
+    /**
+     * Base coordinates of grahas.
+     * 
+     * @var array
+     */
+    protected $grahaPointsBase = [];
+
+    /**
+     * Rules of transformations.
+     * 
+     * @var array
+     */
+    protected $transformRules = [];
+    
+    /**
+     * Bhava coordinates after transformations.
      * 
      * @var array
      */
     protected $bhavaPoints = [];
-    
+
     /**
      * Constructor
      * 
@@ -84,28 +120,38 @@ abstract class AbstractChakra
     /**
      * Get bhava points.
      * 
-     * @param int $size Size of chakra
      * @param int $leftOffset Left offset
      * @param int $topOffset Top offset
+     * @param array $options
      * @return array
      */
-    public function getBhavaPoints($size, $leftOffset = 0, $topOffset = 0)
+    public function getBhavaPoints($leftOffset = 0, $topOffset = 0, array $options = null)
     {
         $myPoints = [];
-        foreach ($this->bhavaPoints as $bhavaKey => $bhavaPoints) {
+        foreach ($this->transformRules as $bhavaKey => $transformInfo) {
+            $bhavaPoints = $this->bhavaPointsBase[$transformInfo['base']];
             foreach ($bhavaPoints as $point => $value) {
-                if ($value != 0) {
-                    if ($point % 2) {
-                        $myPoints[$bhavaKey][] = $value * round($size / $this->chakraDivider) + $topOffset;
-                    } else {
-                        $myPoints[$bhavaKey][] = $value * round($size / $this->chakraDivider) + $leftOffset;
+                if ($point % 2) {
+                    $y = $value;
+                    $factor = round($options['chakraSize'] / $this->chakraDivider);
+                    $transformInfo['transform'][Matrix::TYPE_SCALING] = [$factor, $factor];
+                    $matrixCoord = Matrix::getInstance(Matrix::TYPE_DEFAULT, [[$x, $y, 1]]);
+                    foreach ($transformInfo['transform'] as $transform => $params) {
+                        $matrixTransform = Matrix::getInstance($transform, ...$params);
+                        $matrixCoord->multiMatrix($matrixTransform);
                     }
+                    $arrayCoord = $matrixCoord->toArray();
+                    list($x, $y) = $arrayCoord[0];
+                    
+                    $myPoints[$bhavaKey][] = $x + $leftOffset;
+                    $myPoints[$bhavaKey][] = $y + $topOffset;
                 } else {
-                    $myPoints[$bhavaKey][] = $point % 2 ? $topOffset : $leftOffset;
+                    $x = $value;
                 }
             }
         }
-
+        $this->bhavaPoints = $myPoints;
+        
         return $myPoints;
     }
 
@@ -117,5 +163,5 @@ abstract class AbstractChakra
     /**
      * Get body label points.
      */
-    abstract public function getBodyLabelPoints(array $options);
+    abstract public function getBodyLabelPoints($leftOffset = 0, $topOffset = 0, array $options = null);
 }

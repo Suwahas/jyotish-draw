@@ -41,8 +41,6 @@ class Renderer
     protected $optionChakraVarga = Varga::KEY_D1;
     
     protected $optionOffsetBorder = 4;
-    protected $optionWidthOffsetLabel = 20;
-    protected $optionHeightOffsetLabel = 14;
     
     protected $optionLabelGrahaType = 0;
     protected $optionLabelGrahaCallback = '';
@@ -77,7 +75,7 @@ class Renderer
         $chakraStyle = 'Jyotish\Draw\Plot\Chakra\Style\\' . ucfirst($this->optionChakraStyle);
         $this->Chakra = new $chakraStyle($Data);
 
-        $bhavaPoints = $this->Chakra->getBhavaPoints($this->optionChakraSize, $x, $y);
+        $bhavaPoints = $this->Chakra->getBhavaPoints($x, $y, $this->getOptions());
         
         foreach ($bhavaPoints as $number => $points) {
             if ($this->optionChakraStyle == Chakra::STYLE_NORTH) {
@@ -98,19 +96,16 @@ class Renderer
             $this->Renderer->drawPolygon($points, $options);
         }
         
-        $this->drawRashiLabel($x, $y, $this->getOptions());
-        
         $this->drawBodyLabel($x, $y, $this->getOptions());
+        $this->drawRashiLabel($this->getOptions());
     }
     
     /**
      * Draw rashi labels.
      * 
-     * @param int $x
-     * @param int $y
      * @param null|array $options
      */
-    private function drawRashiLabel($x, $y, array $options = null)
+    private function drawRashiLabel(array $options = null)
     {
         if (isset($options['labelRashiFont'])) {
             $this->Renderer->setOptions($options['labelRashiFont']);
@@ -120,8 +115,8 @@ class Renderer
         foreach ($rashiLabelPoints as $rashi => $point) {
             $this->Renderer->drawText(
                 $rashi, 
-                $point['x'] + $x, 
-                $point['y'] + $y, 
+                $point['x'], 
+                $point['y'], 
                 ['textAlign' => $point['textAlign'], 'textValign' => $point['textValign']]
             );
         }
@@ -136,15 +131,13 @@ class Renderer
      */
     private function drawBodyLabel($x, $y, array $options = null)
     {
-        if (isset($options['labelGrahaFont'])) {
-            $this->Renderer->setOptions($options['labelGrahaFont']);
-        }
-        
-        $bodyLabelPoints = $this->Chakra->getBodyLabelPoints($this->getOptions());
+        $bodyLabelPoints = $this->Chakra->getBodyLabelPoints($x, $y, $this->getOptions());
         
         foreach ($bodyLabelPoints as $body => $point) {
             if (!array_key_exists($body, Graha::$graha) && isset($options['labelExtraFont'])) {
                 $this->Renderer->setOptions($options['labelExtraFont']);
+            } elseif (isset($options['labelGrahaFont'])) {
+                $this->Renderer->setOptions($options['labelGrahaFont']);
             }
             
             $bodyLabel = $this->getBodyLabel($body, [
@@ -154,8 +147,8 @@ class Renderer
 
             $this->Renderer->drawText(
                 $bodyLabel,
-                $point['x'] + $x,
-                $point['y'] + $y,
+                $point['x'],
+                $point['y'],
                 ['textAlign' => $point['textAlign'], 'textValign' => $point['textValign']]
             );
         }
@@ -215,7 +208,7 @@ class Renderer
         $valueUcf = ucfirst($value);
         if (!array_key_exists($valueUcf, Varga::$varga)) {
             throw new Exception\UnexpectedValueException(
-                    'Varga key is wrong.'
+                'Varga key is wrong.'
             );
         }
         $this->optionChakraVarga = $valueUcf;
@@ -233,7 +226,7 @@ class Renderer
     {
         if (!is_numeric($value) || intval($value) < 100) {
             throw new Exception\OutOfRangeException(
-                    'Chakra size should be greater than or equals 100.'
+                'Chakra size should be greater than or equals 100.'
             );
         }
         $this->optionChakraSize = intval($value);
@@ -251,7 +244,7 @@ class Renderer
     {
         if (!in_array($value, Chakra::$style)) {
             throw new Exception\UnexpectedValueException(
-                    "Invalid chakra style provided should be 'north', 'south' or 'east'."
+                "Invalid chakra style provided should be 'north', 'south' or 'east'."
             );
         }
         $this->optionChakraStyle = strtolower($value);
@@ -269,46 +262,10 @@ class Renderer
     {
         if (!is_numeric($value) || intval($value) < 0) {
             throw new Exception\OutOfRangeException(
-                    'Border offset should be greater than or equals 0.'
+                'Border offset should be greater than or equals 0.'
             );
         }
         $this->optionOffsetBorder = intval($value);
-        return $this;
-    }
-
-    /**
-     * Set width offset. Width offset should be greater than or equals 0.
-     * 
-     * @param int $value
-     * @return \Jyotish\Draw\Plot\Chakra\Renderer
-     * @throws Exception\OutOfRangeException
-     */
-    public function setOptionWidthOffsetLabel($value)
-    {
-        if (!is_numeric($value) || intval($value) < 0) {
-            throw new Exception\OutOfRangeException(
-                    'Width offset should be greater than or equals 0.'
-            );
-        }
-        $this->optionWidthOffsetLabel = intval($value);
-        return $this;
-    }
-    
-    /**
-     * Set height offset. Height offset should be greater than or equals 0.
-     * 
-     * @param int $value
-     * @return \Jyotish\Draw\Plot\Chakra\Renderer
-     * @throws Exception\OutOfRangeException
-     */
-    public function setOptionHeightOffsetLabel($value)
-    {
-        if (!is_numeric($value) || intval($value) < 0) {
-            throw new Exception\OutOfRangeException(
-                    'Height offset should be greater than or equals 0.'
-            );
-        }
-        $this->optionHeightOffsetLabel = intval($value);
         return $this;
     }
 
@@ -323,7 +280,7 @@ class Renderer
     {
         if (!in_array($value, [0, 1, 2])) {
             throw new Exception\UnexpectedValueException(
-                    "Invalid label type provided should be 0, 1 or 2."
+                "Invalid label type provided should be 0, 1 or 2."
             );
         }
         $this->optionLabelGrahaType = $value;
