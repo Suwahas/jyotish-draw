@@ -34,7 +34,7 @@ abstract class AbstractRenderer
     protected $optionLeftOffset = 0;
     
     protected $optionFontSize = 10;
-    protected $optionFontName = null;
+    protected $optionFontName = '';
     protected $optionFontColor = '000';
     
     protected $optionTextAlign = 'left';
