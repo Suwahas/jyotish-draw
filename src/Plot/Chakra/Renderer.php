@@ -45,6 +45,7 @@ class Renderer
     protected $optionLabelGrahaType = 0;
     protected $optionLabelGrahaCallback = '';
     
+    protected $optionLabelRashiShow = false;
     protected $optionLabelRashiFont = '';
     protected $optionLabelGrahaFont = '';
     protected $optionLabelExtraFont = '';
@@ -79,39 +80,42 @@ class Renderer
         
         foreach ($bhavaPoints as $number => $points) {
             if ($this->optionChakraStyle == Chakra::STYLE_NORTH) {
-                $bhava = ' bhava'.$number;
-                $rashi = ' rashi'.$Data->getData()['bhava'][$number]['rashi'];
+                $bhava = ' bhava' . $number;
+                $rashi = ' rashi' . $Data->getData()['bhava'][$number]['rashi'];
             } else {
-                $rashi = ' rashi'.$number;
+                $rashi = ' rashi' . $number;
                 $Rashi = Rashi::getInstance($number);
                 $Rashi->setEnvironment($Data);
-                $bhava = ' bhava'.$Rashi->getBhava();
+                $bhava = ' bhava' . $Rashi->getBhava();
             }
             
             $attributes = [
-                'class' => 'bhava'.$bhava.$rashi,
+                'class' => 'bhava' . $bhava . $rashi,
             ];
             
             $options = array_merge($this->getOptions(), ['attributes' => $attributes]);
             $this->Renderer->drawPolygon($points, $options);
         }
         
-        $this->drawBodyLabel($x, $y, $this->getOptions());
-        $this->drawRashiLabel($this->getOptions());
+        if ($this->optionChakraStyle == Chakra::STYLE_NORTH || $this->optionLabelRashiShow) {
+            $this->drawRashiLabel();
+        }
+        
+        $this->drawBodyLabel($x, $y);
     }
     
     /**
      * Draw rashi labels.
-     * 
-     * @param null|array $options
      */
-    private function drawRashiLabel(array $options = null)
+    private function drawRashiLabel()
     {
+        $options = $this->getOptions();
+        
         if (isset($options['labelRashiFont'])) {
             $this->Renderer->setOptions($options['labelRashiFont']);
         }
         
-        $rashiLabelPoints = $this->Chakra->getRashiLabelPoints($this->getOptions());
+        $rashiLabelPoints = $this->Chakra->getRashiLabelPoints($options);
         foreach ($rashiLabelPoints as $rashi => $point) {
             $this->Renderer->drawText(
                 $rashi, 
@@ -127,11 +131,11 @@ class Renderer
      * 
      * @param int $x
      * @param int $y
-     * @param null|array $options
      */
-    private function drawBodyLabel($x, $y, array $options = null)
+    private function drawBodyLabel($x, $y)
     {
-        $bodyLabelPoints = $this->Chakra->getBodyLabelPoints($x, $y, $this->getOptions());
+        $options = $this->getOptions();
+        $bodyLabelPoints = $this->Chakra->getBodyLabelPoints($x, $y, $options);
         
         foreach ($bodyLabelPoints as $body => $point) {
             if (!array_key_exists($body, Graha::$graha) && isset($options['labelExtraFont'])) {
@@ -250,7 +254,7 @@ class Renderer
         $this->optionChakraStyle = strtolower($value);
         return $this;
     }
-
+    
     /**
      * Set border offset. Border offset should be greater than or equals 0.
      * 
@@ -266,6 +270,18 @@ class Renderer
             );
         }
         $this->optionOffsetBorder = intval($value);
+        return $this;
+    }
+    
+    /**
+     * Set display of rashi labels.
+     * 
+     * @param bool $showLabel
+     * @return \Jyotish\Draw\Plot\Chakra\Renderer
+     */
+    public function setOptionLabelRashiShow($showLabel)
+    {
+        $this->optionLabelRashiShow = boolval($showLabel);
         return $this;
     }
 
