@@ -76,7 +76,25 @@ class Renderer
         $chakraStyle = 'Jyotish\Draw\Plot\Chakra\Style\\' . ucfirst($this->optionChakraStyle);
         $this->Chakra = new $chakraStyle($Data);
 
+        $this->drawBhavas($x, $y);
+        
+        if ($this->optionChakraStyle == Chakra::STYLE_NORTH || $this->optionLabelRashiShow) {
+            $this->drawRashiLabel();
+        }
+        
+        $this->drawBodyLabel($x, $y);
+    }
+    
+    /**
+     * Draw bhavas in chakra.
+     * 
+     * @param int $x
+     * @param int $y
+     */
+    private function drawBhavas($x, $y)
+    {
         $bhavaPoints = $this->Chakra->getBhavaPoints($x, $y, $this->getOptions());
+        $Data = $this->Data;
         
         foreach ($bhavaPoints as $number => $points) {
             if ($this->optionChakraStyle == Chakra::STYLE_NORTH) {
@@ -96,14 +114,8 @@ class Renderer
             $options = array_merge($this->getOptions(), ['attributes' => $attributes]);
             $this->Renderer->drawPolygon($points, $options);
         }
-        
-        if ($this->optionChakraStyle == Chakra::STYLE_NORTH || $this->optionLabelRashiShow) {
-            $this->drawRashiLabel();
-        }
-        
-        $this->drawBodyLabel($x, $y);
     }
-    
+
     /**
      * Draw rashi labels.
      */
