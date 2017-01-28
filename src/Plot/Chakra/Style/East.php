@@ -7,7 +7,6 @@
 namespace Jyotish\Draw\Plot\Chakra\Style;
 
 use Jyotish\Graha\Graha;
-use Jyotish\Bhava\Bhava;
 use Jyotish\Ganita\Matrix;
 
 /**
@@ -30,6 +29,13 @@ final class East extends AbstractChakra
      * @var int
      */
     protected $chakraDivider = 3;
+    
+    /**
+     * Fixed type of chakra.
+     * 
+     * @var string
+     */
+    protected $chakraFix = self::FIX_RASHI;
     
     /**
      * Base coordinates of bhavas.
@@ -244,73 +250,5 @@ final class East extends AbstractChakra
             }
         }
         return $myPoints;
-    }
-
-    /**
-     * Get body label points.
-     * 
-     * @param array $options
-     * @return array
-     */
-    public function getBodyLabelPoints($leftOffset = 0, $topOffset = 0, array $options = null)
-    {
-        $bodies = $this->Analysis->getBodyInRashi($options['chakraVarga']);
-        $rashiGrahas = [];
-        foreach ($bodies as $graha => $rashi) {
-            $rashiGrahas[$rashi][] = $graha;
-        }
-
-        $myPoints = [];
-        foreach ($rashiGrahas as $rashi => $grahas) {
-            $bhavaType = (in_array($rashi, Bhava::$bhavaKendra)) ? self::BHAVA_RECTANGLE : self::BHAVA_TRIANGLE;
-            $countKey = $this->getCountKey(count($grahas), $bhavaType);
-            $i = 0;
-            foreach ($grahas as $key => $graha) {
-                $x = $this->grahaPointsBase[$bhavaType][$countKey][$i * 2];
-                $y = $this->grahaPointsBase[$bhavaType][$countKey][$i * 2 + 1];
-                $factor = round($options['chakraSize'] / $this->chakraDivider);
-                $transformInfo = $this->transformRules[$rashi];
-                $transformInfo['transform'][Matrix::TYPE_SCALING] = [$factor, $factor];
-                $matrixCoord = Matrix::getInstance(Matrix::TYPE_DEFAULT, [[$x, $y, 1]]);
-                
-                foreach ($transformInfo['transform'] as $transform => $params) {
-                    $matrixTransform = Matrix::getInstance($transform, ...$params);
-                    $matrixCoord->multiMatrix($matrixTransform);
-                }
-                
-                $arrayCoord = $matrixCoord->toArray();
-                list($x, $y) = $arrayCoord[0];
-                
-                $myPoints[$graha]['x'] = $x + $leftOffset;
-                $myPoints[$graha]['y'] = $y + $topOffset;
-                $myPoints[$graha]['textAlign'] = 'center';
-                $myPoints[$graha]['textValign'] = 'middle';
-                $i += 1;
-            }
-        }
-        return $myPoints;
-    }
-    
-    private function getCountKey($grahaCount, $bhavaType)
-    {
-        if ($bhavaType == self::BHAVA_TRIANGLE) {
-            if ($grahaCount == 1) {
-                $countKey = self::COUNT_ONE;
-            } elseif ($grahaCount > 1 && $grahaCount <= 4) {
-                $countKey = self::COUNT_FOUR;
-            } else {
-                $countKey = self::COUNT_MORE;
-            }
-        } else {
-            if ($grahaCount == 1) {
-                $countKey = self::COUNT_ONE;
-            } elseif ($grahaCount > 1 && $grahaCount <= 5) {
-                $countKey = self::COUNT_FIVE;
-            } else {
-                $countKey = self::COUNT_MORE;
-            }
-        }
-        
-        return $countKey;
     }
 }

@@ -6,6 +6,7 @@
 
 namespace Jyotish\Draw\Plot\Chakra\Style;
 
+use Jyotish\Bhava\Bhava;
 use Jyotish\Base\Analysis;
 use Jyotish\Ganita\Matrix;
 
@@ -39,6 +40,15 @@ abstract class AbstractChakra
      * Eastern Indian Style
      */
     const STYLE_EAST = 'east';
+    
+    /**
+     * Fixed bhava chakra
+     */
+    const FIX_BHAVA = 'bhava';
+    /**
+     * Fixed rashi chakra
+     */
+    const FIX_RASHI = 'rashi';
     
     const COUNT_ONE = 'one';
     const COUNT_FOUR = 'four';
@@ -77,6 +87,13 @@ abstract class AbstractChakra
      */
     protected $chakraDivider;
     
+    /**
+     * Fixed type of chakra.
+     * 
+     * @var string
+     */
+    protected $chakraFix;
+
     /**
      * Base coordinates of bhavas.
      * 
@@ -154,14 +171,120 @@ abstract class AbstractChakra
         
         return $myPoints;
     }
+    
+    /**
+     * Get body label points.
+     * 
+     * @param int $leftOffset Left offset
+     * @param int $topOffset Top offset
+     * @param array $options
+     * @return array
+     */
+    public function getBodyLabelPoints($leftOffset = 0, $topOffset = 0, array $options = null)
+    {
+        $grahaDisposition = $this->getGrahaDisposition($options['chakraVarga']);
+        $myPoints = [];
+        
+        foreach ($grahaDisposition as $disposition => $grahas) {
+            $bhavaType = $this->getBhavaType($disposition);
+            $countKey = $this->getCountKey(count($grahas), $bhavaType);
+            $i = 0;
+            foreach ($grahas as $key => $graha) {
+                $x = $this->grahaPointsBase[$bhavaType][$countKey][$i * 2];
+                $y = $this->grahaPointsBase[$bhavaType][$countKey][$i * 2 + 1];
+                $factor = round($options['chakraSize'] / $this->chakraDivider);
+                $transformInfo = $this->transformRules[$disposition];
+                $transformInfo['transform'][Matrix::TYPE_SCALING] = [$factor, $factor];
+                $matrixCoord = Matrix::getInstance(Matrix::TYPE_DEFAULT, [[$x, $y, 1]]);
+                
+                foreach ($transformInfo['transform'] as $transform => $params) {
+                    $matrixTransform = Matrix::getInstance($transform, ...$params);
+                    $matrixCoord->multiMatrix($matrixTransform);
+                }
+                
+                $arrayCoord = $matrixCoord->toArray();
+                list($x, $y) = $arrayCoord[0];
+                
+                $myPoints[$graha]['x'] = $x + $leftOffset;
+                $myPoints[$graha]['y'] = $y + $topOffset;
+                $myPoints[$graha]['textAlign'] = 'center';
+                $myPoints[$graha]['textValign'] = 'middle';
+                $i += 1;
+            }
+        }
+        return $myPoints;
+    }
+    /**
+     * Get graha dispositions.
+     * 
+     * @param string $chakraVarga
+     * @return array
+     */
+    private function getGrahaDisposition($chakraVarga)
+    {
+        if ($this->chakraFix == self::FIX_RASHI) {
+            $bodies = $this->Analysis->getBodyInRashi($chakraVarga);
+        } else {
+            $bodies = $this->Analysis->getBodyInBhava($chakraVarga);
+        }
+        
+        $grahaDisposition = [];
+        foreach ($bodies as $graha => $disposition) {
+            $grahaDisposition[$disposition][] = $graha;
+        }
+        
+        return $grahaDisposition;
+    }
+
+    /**
+     * Get count key.
+     * 
+     * @param int $grahaCount
+     * @param string $bhavaType
+     * @return string
+     */
+    private function getCountKey($grahaCount, $bhavaType)
+    {
+        if ($bhavaType == self::BHAVA_TRIANGLE) {
+            if ($grahaCount == 1) {
+                $countKey = self::COUNT_ONE;
+            } elseif ($grahaCount > 1 && $grahaCount <= 4) {
+                $countKey = self::COUNT_FOUR;
+            } else {
+                $countKey = self::COUNT_MORE;
+            }
+        } else {
+            if ($grahaCount == 1) {
+                $countKey = self::COUNT_ONE;
+            } elseif ($grahaCount > 1 && $grahaCount <= 5) {
+                $countKey = self::COUNT_FIVE;
+            } else {
+                $countKey = self::COUNT_MORE;
+            }
+        }
+        
+        return $countKey;
+    }
+    
+    /**
+     * Get type of bhava (rectangle or triangle).
+     * 
+     * @param int $disposition
+     * @return string
+     */
+    private function getBhavaType($disposition)
+    {
+        if (count($this->bhavaPointsBase) > 1) {
+            return (in_array($disposition, Bhava::$bhavaKendra)) ? self::BHAVA_RECTANGLE : self::BHAVA_TRIANGLE;
+        } else {
+            return self::BHAVA_RECTANGLE;
+        }
+    }
 
     /**
      * Get rashi label points.
+     * 
+     * @param array $options
      */
     abstract public function getRashiLabelPoints(array $options);
-
-    /**
-     * Get body label points.
-     */
-    abstract public function getBodyLabelPoints($leftOffset = 0, $topOffset = 0, array $options = null);
 }
