@@ -105,8 +105,8 @@ final class North extends AbstractChakra
         3 => [
             'base' => self::BHAVA_TRIANGLE,
             'transform' => [
-                Matrix::TYPE_REFLECTION => [true, false],
                 Matrix::TYPE_ROTATION => [M_PI_2],
+                Matrix::TYPE_REFLECTION => [false, true],
             ]
         ],
         4 => [
