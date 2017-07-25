@@ -70,7 +70,7 @@ class Renderer
      */
     public function drawChakra(\Jyotish\Base\Data $Data, $x, $y, array $options = null)
     {
-        $this->setData($Data);
+        $this->setDataInstance($Data);
         $this->setOptions($options);
         
         $chakraStyle = 'Jyotish\Draw\Plot\Chakra\Style\\' . ucfirst($this->optionChakraStyle);

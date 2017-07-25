@@ -129,7 +129,7 @@ abstract class AbstractChakra
      */
     public function __construct(\Jyotish\Base\Data $Data)
     {
-        $this->setData($Data);
+        $this->setDataInstance($Data);
         
         $this->Analysis = new Analysis($Data);
     }
