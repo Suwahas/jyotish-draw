@@ -1,5 +1,5 @@
 {
-    "name": "kunjara/jyotish-draw",
+    "name": "suwahas/jyotish-draw",
     "description": "Drawing component for Jyotish Library",
     "keywords": [
         "jyotish", "vedic astrology", "natal chart"
@@ -16,10 +16,7 @@
     ],
     "require": {
         "php": ">=5.6",
-        "kunjara/jyotish": "1.0.*@dev"
-    },
-    "require-dev": {
-        "phpunit/phpunit": "5.2.*"
+        "suwahas/jyotish": "dev-master"
     },
     "autoload": {
         "psr-4": {
