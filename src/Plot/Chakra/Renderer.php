@@ -71,8 +71,10 @@ class Renderer
     public function drawChakra(\Jyotish\Base\Data $Data, $x, $y, array $options = null)
     {
         $this->setDataInstance($Data);
-        $this->setOptions($options);
         
+        if(!empty($options)){
+        $this->setOptions($options);
+        }
         $chakraStyle = 'Jyotish\Draw\Plot\Chakra\Style\\' . ucfirst($this->optionChakraStyle);
         $this->Chakra = new $chakraStyle($Data);
 
@@ -123,7 +125,7 @@ class Renderer
     {
         $options = $this->getOptions();
         
-        if (isset($options['labelRashiFont'])) {
+    if ($options['labelRashiFont']!="") {
             $this->Renderer->setOptions($options['labelRashiFont']);
         }
         
@@ -150,7 +152,7 @@ class Renderer
         $bodyLabelPoints = $this->Chakra->getBodyLabelPoints($x, $y, $options);
         
         foreach ($bodyLabelPoints as $body => $point) {
-            if (!array_key_exists($body, Graha::$graha) && isset($options['labelExtraFont'])) {
+            if (!array_key_exists($body, Graha::$graha) && !empty($options['labelExtraFont'])) {
                 $this->Renderer->setOptions($options['labelExtraFont']);
             } elseif (isset($options['labelGrahaFont'])) {
                 $this->Renderer->setOptions($options['labelGrahaFont']);
